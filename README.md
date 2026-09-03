@@ -131,3 +131,54 @@ git push origin main
 ## 💼 LinkedIn Reflection
 
 > "Day 17 of my 60-day challenge! Today, I explored **Backtracking & Search** by building a Treasure Chest Combination Generator in Python. Backtracking is a fundamental technique for state-space search—using the **Choose -> Explore -> Undo** loop to generate subsets ($2^N$). Beyond game mechanics, backtracking is the foundation behind AI decision trees, automated flight/shift scheduling, and recommendation systems!"
+
+---
+
+# Day 20: Robot Calculator Arena (Reverse Polish Notation)
+
+## Problem Overview
+
+Two robots send mathematical attacks as Reverse Polish Notation (RPN).
+In RPN, every operator comes after its operands, so parentheses are not
+needed. For example:
+
+```text
+2 1 + 3 *
+```
+
+means `(2 + 1) * 3`, which evaluates to `9`.
+
+## Stack Flow
+
+The evaluator processes tokens from left to right:
+
+| Token | Action | Stack |
+| --- | --- | --- |
+| `2` | Push number | `[2]` |
+| `1` | Push number | `[2, 1]` |
+| `+` | Pop `1` and `2`, push `3` | `[3]` |
+| `3` | Push number | `[3, 3]` |
+| `*` | Pop `3` and `3`, push `9` | `[9]` |
+
+For an operator, the first value popped is the right operand. This matters
+for subtraction and division: `8 3 -` is `8 - 3`, not `3 - 8`.
+
+The evaluator supports `+`, `-`, `*`, and `/`. Division truncates toward zero,
+and malformed expressions or division by zero produce clear exceptions.
+
+## Complexity
+
+- **Time:** $O(n)$, because each token is processed once.
+- **Space:** $O(n)$ for the stack in the worst case.
+
+## Run the Day 20 Example
+
+```bash
+python day20_Robot_Calculator_Arena.py
+```
+
+## Run the Unit Tests
+
+```bash
+python -m pytest test_day20.py
+```
