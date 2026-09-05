@@ -134,6 +134,35 @@ git push origin main
 
 ---
 
+# Day 22: Theme Park FastPass Simulator
+
+## Problem Overview
+
+The simulator models a ride queue with two FIFO lanes:
+
+- VIP visitors are served before normal visitors.
+- Visitors within the same lane are served in arrival order.
+- `snapshot()` shows the current waiting lanes.
+- `visualize()` shows every join and service operation step by step.
+
+## Run the Simulator
+
+```bash
+python day22_Theme_Park_FastPass_Simulator.py
+```
+
+## Run the Unit Tests
+
+```bash
+python -m pytest test_day22.py
+```
+
+The scheduler uses `collections.deque`, giving constant-time enqueue and
+dequeue operations. With $n$ visitors, processing the full queue takes
+$O(n)$ time and the two waiting lanes use $O(n)$ space.
+
+---
+
 # Day 20: Robot Calculator Arena (Reverse Polish Notation)
 
 ## Problem Overview
