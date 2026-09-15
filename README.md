@@ -211,3 +211,48 @@ python day20_Robot_Calculator_Arena.py
 ```bash
 python -m pytest test_day20.py
 ```
+
+# Day 32: Binary Search
+
+## Problem Overview
+
+The vault stores access codes in sorted order. Instead of checking every code
+from left to right, binary search checks the middle code and discards the half
+that cannot contain the target. The implementation in `day32.py` is iterative
+and returns the target's index, or `-1` when the code is absent.
+
+## Search-Space Visualization
+
+`visualize_binary_search()` prints each `[left, right]` range, the middle index,
+and which half is discarded. This makes the divide-and-conquer process visible:
+
+```text
+Step 1: range [0, 6], middle=3, value=8
+Target is larger; discard the left half.
+Step 2: range [4, 6], middle=5, value=12
+Found 12 at index 5.
+```
+
+## Performance Comparison
+
+| Algorithm | Requirement | Time | Extra Space |
+| --- | --- | --- | --- |
+| Linear search | Works with any sequence | $O(n)$ | $O(1)$ |
+| Binary search | Sequence must be sorted | $O(\log n)$ | $O(1)$ |
+
+`compare_search_algorithms()` runs both approaches for a configurable number of
+trials and reports their durations and returned indices. Binary search is much
+more useful for large sorted indexes such as database tables, search-engine
+indexes, and recommendation catalogs.
+
+## Run the Binary Search Demo
+
+```bash
+python day32.py
+```
+
+## Run the Unit Tests
+
+```bash
+python -m pytest test_day32.py
+```
