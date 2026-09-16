@@ -256,3 +256,51 @@ python day32.py
 ```bash
 python -m pytest test_day32.py
 ```
+
+# Day 33: First Bad Version
+
+## Problem Overview
+
+Robot versions are released in order. Every version before the first
+defective version is good, and every version from that point onward is bad.
+`first_bad_version()` finds the first defective version without scanning every
+release.
+
+The function accepts an injected `is_bad_version(version)` callback to model
+the expensive API. This keeps the search logic testable and lets tests count
+the number of API calls.
+
+## Binary Search Boundaries
+
+The search uses inclusive, 1-based boundaries:
+
+- `left` is the earliest version that could still be defective.
+- `right` is the latest version that could still be defective.
+- If `middle` is bad, it may be the answer, so keep it with `right = middle`.
+- If `middle` is good, the answer must be later, so use `left = middle + 1`.
+
+When `left == right`, both boundaries identify the first bad version. The
+algorithm uses $O(\log n)$ API calls and $O(1)$ extra space.
+
+## Edge Cases
+
+- One version: it is returned without an unnecessary API call.
+- The first version is bad: the search keeps moving `right` leftward.
+- The final version is bad: every good midpoint moves `left` rightward.
+- An empty range is rejected with `ValueError`; the challenge assumes at
+  least one version exists and at least one version is bad.
+
+## Run the Code and Tests
+
+```bash
+python day33.py
+python -m pytest test_day33.py
+```
+
+## GitHub Submission
+
+```bash
+git add day33.py test_day33.py README.md
+git commit -m "Day 33: Solve First Bad Version with binary search"
+git push origin main
+```
