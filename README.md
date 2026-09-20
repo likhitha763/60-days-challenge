@@ -1,3 +1,31 @@
+## Day 37: Assign Cookies (Greedy Algorithms)
+
+### Problem Overview
+
+Each child has a happiness requirement (greed factor), and each cookie has a
+size. A child is happy when the assigned cookie is at least as large as their
+requirement. The goal is to maximize the number of happy children.
+
+### Greedy Strategy
+
+1. Sort the child requirements and cookie sizes from smallest to largest.
+2. Start with the least demanding child and the smallest available cookie.
+3. If the cookie is large enough, assign it and move to the next child.
+4. Otherwise, skip the cookie because it cannot satisfy the current child or
+  any child with a larger requirement.
+
+This works because satisfying the least demanding remaining child with the
+smallest sufficient cookie preserves larger cookies for children who need
+them. The implementation in `day37.py` runs in `O(n log n + m log m)` time and
+uses `O(n + m)` space for sorted copies.
+
+### Run the Code and Tests
+
+```bash
+python day37.py
+python -m pytest test_day37.py
+```
+
 # Day 17: Treasure Chest Combination Generator (Backtracking & Search)
 
 ## 💎 Problem Overview
