@@ -332,3 +332,48 @@ git add day33.py test_day33.py README.md
 git commit -m "Day 33: Solve First Bad Version with binary search"
 git push origin main
 ```
+
+---
+
+# Day 38: Royal Family Tree Traversal
+
+## Problem Overview
+
+`day38.py` builds a binary tree representing a royal lineage and traverses it
+inorder: left subtree, root, then right subtree. The example tree produces the
+visit order `[1, 3, 6, 8, 10, 14]`.
+
+## Visualization
+
+```mermaid
+graph TD
+    Root[8] --> Left[3]
+    Root --> Right[10]
+    Left --> LeftLeft[1]
+    Left --> LeftRight[6]
+    Right --> RightRight[14]
+```
+
+```text
+        8
+       /  \
+      3    10
+     / \     \
+    1   6     14
+
+Inorder: 1 -> 3 -> 6 -> 8 -> 10 -> 14
+```
+
+## Recursive vs Iterative
+
+- **Recursive:** follows the tree structure naturally and uses the call stack.
+- **Iterative:** uses an explicit stack and avoids recursive call-depth limits.
+- Both approaches run in `O(n)` time. Each uses `O(h)` traversal space, where
+  `h` is the tree height.
+
+## Run the Code and Tests
+
+```bash
+python day38.py
+python -m pytest test_day38.py
+```
