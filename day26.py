@@ -1,221 +1,145 @@
 """
-Bot / Duplicate Activity Detection Within K Distance
-=====================================================
-Problem: given a sequence of social media post events, flag any post whose
-content repeats another post within K positions of it in the stream (i.e.
-the same content posted twice, close together -- classic spam/bot signal).
+Two Pointer Optimization: Remove Nth Node From End
 
-"Within K distance" here means K *positions* apart in the event stream,
-not K seconds -- see the note at the top of the conversation for why that
-interpretation was chosen over a timestamp-based one.
+Problem:
+An encrypted communication system stores secret messages in a linked chain.
+One corrupted message must be removed before transmission.
 
-Two implementations:
-1. brute_force_check  -- O(n*k) time: for each event, scan back up to k prior events.
-2. hash_based_check   -- O(n) time:   for each event, one hash-map lookup.
+This program:
+1. Builds a singly linked list message chain.
+2. Removes the nth node from the end using two pointers.
+3. Uses a single traversal instead of counting the list length first.
+4. Explains why the single-pass approach is useful.
 
-Both find the SAME first violation, so correctness is directly comparable.
+Time Complexity: O(L), where L is the number of messages.
+Space Complexity: O(1) extra space.
 """
 
-import random
-import time
+
+class Node:
+    """A node representing one message in the linked chain."""
+
+    def __init__(self, message):
+        self.message = message
+        self.next = None
 
 
-# ---------------------------------------------------------------------------
-# Event simulation
-# ---------------------------------------------------------------------------
+class MessageChain:
+    """Singly linked list for storing encrypted messages."""
 
-def simulate_events(n: int, num_distinct_contents: int, seed: int = 42) -> list:
-    """
-    Generate `n` simulated post events as content labels (e.g. a hash of the
-    post body -- represented here as a string id standing in for that hash).
-    Fewer distinct contents relative to n means more repeats are likely,
-    simulating a bot reposting a small set of messages repeatedly.
-    """
-    rng = random.Random(seed)
-    return [f"content-{rng.randint(0, num_distinct_contents - 1)}" for _ in range(n)]
+    def __init__(self):
+        self.head = None
 
+    def build(self, messages):
+        """Build the linked list from a list of messages."""
+        for message in messages:
+            self.append(message)
 
-def guaranteed_unique_events(n: int) -> list:
-    """
-    Deterministically unique content labels -- no randomness, no reliance on
-    a 'low enough' collision probability. This is the true worst case: with
-    zero duplicates possible, neither algorithm can ever exit early, so the
-    full O(n) / O(n*k) cost is always paid. Used only for benchmarking, where
-    accidental early exits (via birthday-paradox collisions) would corrupt
-    the timing comparison.
-    """
-    return [f"unique-{i}" for i in range(n)]
+    def append(self, message):
+        """Add a message to the end of the chain."""
+        new_node = Node(message)
 
+        if self.head is None:
+            self.head = new_node
+            return
 
-# ---------------------------------------------------------------------------
-# Brute force: O(n * k)
-# ---------------------------------------------------------------------------
+        current = self.head
+        while current.next:
+            current = current.next
 
-def brute_force_check(events: list, k: int):
-    """
-    For each event, manually scan the previous k events looking for a match.
-    Returns (True, i, j) for the first violation found (i is the later index,
-    j the earlier one), or (False, None, None) if no violation exists.
-    """
-    n = len(events)
-    for i in range(n):
-        window_start = max(0, i - k)
-        for j in range(window_start, i):
-            if events[i] == events[j]:
-                return True, i, j
-    return False, None, None
+        current.next = new_node
 
+    def display(self):
+        """Return the messages in the chain."""
+        messages = []
+        current = self.head
 
-# ---------------------------------------------------------------------------
-# Optimized: O(n) using a hash map of "content -> last seen index"
-# ---------------------------------------------------------------------------
+        while current:
+            messages.append(current.message)
+            current = current.next
 
-def hash_based_check(events: list, k: int):
-    """
-    Single pass. For each event, check the hash map for when this exact
-    content was last seen. If that was within k positions, it's a violation.
-    Otherwise, record/update the last-seen index and move on.
+        return messages
 
-    This never re-scans anything -- each event is looked at exactly once,
-    and the hash map lookup is O(1) on average.
-    """
-    last_seen = {}
-    for i, content in enumerate(events):
-        if content in last_seen and i - last_seen[content] <= k:
-            return True, i, last_seen[content]
-        last_seen[content] = i
-    return False, None, None
+    def remove_nth_from_end(self, n):
+        """
+        Remove the nth node from the end using two pointers.
 
+        The fast pointer is moved n steps ahead first.
+        Then slow and fast move together. When fast reaches the end,
+        slow is positioned just before the node that must be removed.
+        """
 
-# ---------------------------------------------------------------------------
-# Correctness tests
-# ---------------------------------------------------------------------------
+        if n <= 0:
+            raise ValueError("n must be greater than 0")
 
-def run_tests():
-    # No duplicates at all
-    events = ["a", "b", "c", "d"]
-    assert brute_force_check(events, 2) == (False, None, None)
-    assert hash_based_check(events, 2) == (False, None, None)
+        # Dummy node makes removing the head node easy.
+        dummy = Node("DUMMY")
+        dummy.next = self.head
 
-    # Duplicate exactly at distance k (should count -- "within k" is inclusive)
-    events = ["a", "b", "c", "a"]  # distance from index 3 to 0 is 3
-    assert brute_force_check(events, 3) == (True, 3, 0)
-    assert hash_based_check(events, 3) == (True, 3, 0)
+        slow = dummy
+        fast = dummy
 
-    # Same duplicate, but k too small to catch it
-    assert brute_force_check(events, 2) == (False, None, None)
-    assert hash_based_check(events, 2) == (False, None, None)
+        # Create a gap of n nodes between fast and slow.
+        for _ in range(n):
+            fast = fast.next
 
-    # Duplicate right next to each other (distance 1)
-    events = ["a", "a", "b", "c"]
-    assert brute_force_check(events, 1) == (True, 1, 0)
-    assert hash_based_check(events, 1) == (True, 1, 0)
+            # n is larger than the list length.
+            if fast is None:
+                raise ValueError("n is larger than the number of messages")
 
-    # Repeated content but far apart -- should NOT trigger with small k
-    events = ["a", "b", "c", "d", "e", "a"]
-    assert brute_force_check(events, 2) == (False, None, None)
-    assert hash_based_check(events, 2) == (False, None, None)
-    # ... but should trigger if k is large enough to span the gap
-    assert brute_force_check(events, 5) == (True, 5, 0)
-    assert hash_based_check(events, 5) == (True, 5, 0)
+        # Move both pointers together until fast reaches the last node.
+        while fast.next:
+            slow = slow.next
+            fast = fast.next
 
-    # Empty stream
-    assert brute_force_check([], 3) == (False, None, None)
-    assert hash_based_check([], 3) == (False, None, None)
+        # slow.next is the nth node from the end.
+        removed_message = slow.next.message
+        slow.next = slow.next.next
 
-    print("PASS: all 7 correctness cases (brute force and hash-based agree)")
+        self.head = dummy.next
 
-    # Cross-check both implementations agree on random data
-    for trial in range(15):
-        rng = random.Random(trial)
-        events = simulate_events(n=rng.randint(0, 100), num_distinct_contents=rng.randint(1, 20), seed=trial)
-        k = rng.randint(1, 10)
-        bf = brute_force_check(events, k)
-        hb = hash_based_check(events, k)
-        assert bf == hb, f"mismatch at trial {trial}: brute={bf} hash={hb}"
-
-    print("PASS: 15 random cross-validation trials (brute force and hash agree)")
+        return removed_message
 
 
-# ---------------------------------------------------------------------------
-# Benchmark
-# ---------------------------------------------------------------------------
-
-def benchmark():
-    print("\nBenchmark: brute force O(n*k) vs hash-based O(n)")
-    print(f"{'n':>10} | {'k':>4} | {'brute force (s)':>16} | {'hash-based (s)':>14}")
-    print("-" * 54)
-
-    # Fixed, moderate k -- brute force cost still grows with n even though
-    # k is constant, because it's O(n*k), not O(k) alone.
-    k = 50
-    for n in [1_000, 5_000, 10_000, 20_000, 50_000]:
-        # Deterministic uniqueness, not "probably unique" -- see docstring.
-        events = guaranteed_unique_events(n)
-
-        start = time.perf_counter()
-        brute_force_check(events, k)
-        bf_time = time.perf_counter() - start
-
-        start = time.perf_counter()
-        hash_based_check(events, k)
-        hb_time = time.perf_counter() - start
-
-        print(f"{n:>10} | {k:>4} | {bf_time:>16.4f} | {hb_time:>14.6f}")
-
-    # Now hold n fixed and grow k, to isolate k's effect on brute force.
-    print("\nHolding n fixed, growing k (isolates k's cost in brute force):")
-    print(f"{'n':>10} | {'k':>6} | {'brute force (s)':>16} | {'hash-based (s)':>14}")
-    print("-" * 56)
-    n = 20_000
-    for k in [10, 100, 500, 2_000]:
-        # Deterministic uniqueness -- see guaranteed_unique_events docstring.
-        # A "large enough" random pool is NOT sufficient here: with 20,000
-        # draws, the birthday paradox still gives a meaningful chance of an
-        # accidental match even from a pool of millions, which is exactly
-        # what corrupted the previous version of this benchmark.
-        events = guaranteed_unique_events(n)
-        start = time.perf_counter()
-        brute_force_check(events, k)
-        bf_time = time.perf_counter() - start
-
-        start = time.perf_counter()
-        hash_based_check(events, k)
-        hb_time = time.perf_counter() - start
-
-        print(f"{n:>10} | {k:>6} | {bf_time:>16.4f} | {hb_time:>14.6f}")
+def explain_single_pass():
+    print("\nWhy does single-pass traversal matter?")
+    print("- The two-pointer technique avoids traversing the list once to")
+    print("  count its length and then again to find the target node.")
+    print("- Fast stays n nodes ahead of slow.")
+    print("- When fast reaches the end, slow is exactly where we need it.")
+    print("- This reduces the operation to one traversal: O(L) time and")
+    print("  O(1) extra space.")
 
 
-# ---------------------------------------------------------------------------
-# Explanation
-# ---------------------------------------------------------------------------
+def main():
+    print("=== Encrypted Message Chain ===")
 
-EXPLANATION = """
-Why hashing improves performance here
----------------------------------------
-Brute force answers "have I seen this content in the last k events?" by
-re-scanning up to k prior events, every single time -- that's O(n*k)
-overall. The benchmark above shows this directly: holding k fixed but
-growing n, brute force's time grows linearly with n (as expected), but
-growing k while holding n fixed ALSO makes it slower -- because k controls
-how much re-scanning happens per event, not just a constant.
+    messages = [
+        "MSG-001",
+        "MSG-002",
+        "MSG-003",
+        "MSG-004",
+        "MSG-005",
+    ]
 
-The hash-based version answers the same question with a single dictionary
-lookup: "what index did I last see this exact content at?" That's O(1)
-average time regardless of how big k is, because a hash map doesn't scan
-anything -- it computes where to look. The whole pass is O(n) and, unlike
-brute force, is completely insensitive to how large the detection window
-(k) is.
+    chain = MessageChain()
+    chain.build(messages)
 
-This matters for real spam/bot detection because k (the "suspicious
-window") is a business decision, not a fixed constant -- platforms may
-want to check for duplicates within the last 100 posts, or the last
-10,000. A brute-force approach gets proportionally slower as that window
-grows; a hash-based approach doesn't care.
-"""
+    print("Original chain:")
+    print(" -> ".join(chain.display()))
+
+    # Example: remove the 2nd message from the end.
+    n = 2
+    print(f"\nRemoving the {n}nd message from the end...")
+
+    removed = chain.remove_nth_from_end(n)
+
+    print(f"Removed message: {removed}")
+    print("\nChain after removal:")
+    print(" -> ".join(chain.display()))
+
+    explain_single_pass()
 
 
 if __name__ == "__main__":
-    run_tests()
-    benchmark()
-    print(EXPLANATION)
+    main()
